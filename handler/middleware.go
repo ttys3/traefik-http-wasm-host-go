@@ -117,6 +117,7 @@ func NewMiddleware(ctx context.Context, guest []byte, host handler.Host, opts ..
 		_ = wr.Close(ctx)
 		return nil, err
 	} else {
+		m.verifyExportedFunctions(g.guest)
 		m.pool.Put(g)
 	}
 
@@ -126,19 +127,35 @@ func NewMiddleware(ctx context.Context, guest []byte, host handler.Host, opts ..
 func (m *middleware) compileGuest(ctx context.Context, wasm []byte) (wazero.CompiledModule, error) {
 	if guest, err := m.runtime.CompileModule(ctx, wasm); err != nil {
 		return nil, fmt.Errorf("wasm: error compiling guest: %w", err)
-	} else if handleRequest, ok := guest.ExportedFunctions()[handler.FuncHandleRequest]; !ok {
-		return nil, fmt.Errorf("wasm: guest doesn't export func[%s]", handler.FuncHandleRequest)
-	} else if len(handleRequest.ParamTypes()) != 0 || !bytes.Equal(handleRequest.ResultTypes(), []wazeroapi.ValueType{wazeroapi.ValueTypeI64}) {
-		return nil, fmt.Errorf("wasm: guest exports the wrong signature for func[%s]. should be () -> (i64)", handler.FuncHandleRequest)
-	} else if handleResponse, ok := guest.ExportedFunctions()[handler.FuncHandleResponse]; !ok {
-		return nil, fmt.Errorf("wasm: guest doesn't export func[%s]", handler.FuncHandleResponse)
-	} else if !bytes.Equal(handleResponse.ParamTypes(), []wazeroapi.ValueType{wazeroapi.ValueTypeI32, wazeroapi.ValueTypeI32}) || len(handleResponse.ResultTypes()) != 0 {
-		return nil, fmt.Errorf("wasm: guest exports the wrong signature for func[%s]. should be (i32, 32) -> ()", handler.FuncHandleResponse)
-	} else if _, ok = guest.ExportedMemories()[api.Memory]; !ok {
+	} else if _, ok := guest.ExportedMemories()[api.Memory]; !ok {
 		return nil, fmt.Errorf("wasm: guest doesn't export memory[%s]", api.Memory)
 	} else {
 		return guest, nil
 	}
+}
+
+func (m *middleware) verifyExportedFunctions(guest wazeroapi.Module) error {
+	handleRequest, ok := guest.ExportedFunctionDefinitions()[handler.FuncHandleRequest]
+	if !ok {
+		return fmt.Errorf("wasm: guest doesn't export func[%s]", handler.FuncHandleRequest)
+	}
+
+	if len(handleRequest.ParamTypes()) != 0 ||
+		!bytes.Equal(handleRequest.ResultTypes(), []wazeroapi.ValueType{wazeroapi.ValueTypeI64}) {
+		return fmt.Errorf("wasm: guest exports the wrong signature for func[%s]. should be () -> (i64)", handler.FuncHandleRequest)
+	}
+
+	handleResponse, ok := guest.ExportedFunctionDefinitions()[handler.FuncHandleResponse]
+	if !ok {
+		return fmt.Errorf("wasm: guest doesn't export func[%s]", handler.FuncHandleResponse)
+	}
+
+	if !bytes.Equal(handleResponse.ParamTypes(), []wazeroapi.ValueType{wazeroapi.ValueTypeI32, wazeroapi.ValueTypeI32}) ||
+		len(handleResponse.ResultTypes()) != 0 {
+		return fmt.Errorf("wasm: guest exports the wrong signature for func[%s]. should be (i32, 32) -> ()", handler.FuncHandleResponse)
+	}
+
+	return nil
 }
 
 // HandleRequest implements Middleware.HandleRequest

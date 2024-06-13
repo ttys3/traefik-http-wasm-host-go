@@ -104,9 +104,11 @@ func NewMiddleware(ctx context.Context, guest []byte, host handler.Host, opts ..
 
 		fallthrough // proceed to configure any http_handler imports
 	case imports&importHttpHandler != 0:
-		if _, err = m.instantiateHost(ctx); err != nil {
-			_ = wr.Close(ctx)
-			return nil, fmt.Errorf("wasm: error instantiating host: %w", err)
+		if m.runtime.Module(handler.HostModule) == nil {
+			if _, err = m.instantiateHost(ctx); err != nil {
+				_ = wr.Close(ctx)
+				return nil, fmt.Errorf("wasm: error instantiating host: %w", err)
+			}
 		}
 	}
 

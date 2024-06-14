@@ -220,6 +220,10 @@ type guest struct {
 func (m *middleware) newGuest(ctx context.Context) (*guest, error) {
 	moduleName := fmt.Sprintf("%d", atomic.AddUint64(&m.instanceCounter, 1))
 
+	if mod := m.runtime.Module(moduleName); mod != nil {
+		mod.Close(ctx)
+	}
+
 	g, err := m.runtime.InstantiateModule(ctx, m.guestModule, m.moduleConfig.WithName(moduleName))
 	if err != nil {
 		_ = m.runtime.Close(ctx)

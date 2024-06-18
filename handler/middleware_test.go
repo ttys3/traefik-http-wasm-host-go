@@ -147,6 +147,11 @@ wasm stack trace:
 	}
 }
 
+func TestMissingHandleResponse(t *testing.T) {
+	_, err := NewMiddleware(testCtx, test.BinErrorMissingHandleResponse, handler.UnimplementedHost{})
+	requireEqualError(t, err, "wasm: guest doesn't export func[handle_response]")
+}
+
 func TestMiddlewareResponseUsesRequestModule(t *testing.T) {
 	mw, err := NewMiddleware(testCtx, test.BinE2EHandleResponse, handler.UnimplementedHost{})
 	if err != nil {

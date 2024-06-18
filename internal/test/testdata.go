@@ -98,6 +98,9 @@ var BinErrorPanicOnStart []byte
 //go:embed testdata/error/set_request_header_after_next.wasm
 var BinErrorSetRequestHeaderAfterNext []byte
 
+//go:embed testdata/error/missing_handle_response.wasm
+var BinErrorMissingHandleResponse []byte
+
 // binExample instead of go:embed as files aren't relative to this directory.
 func binExample(name string) []byte {
 	_, thisFile, _, ok := runtime.Caller(1)

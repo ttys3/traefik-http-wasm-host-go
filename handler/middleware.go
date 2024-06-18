@@ -117,7 +117,11 @@ func NewMiddleware(ctx context.Context, guest []byte, host handler.Host, opts ..
 		_ = wr.Close(ctx)
 		return nil, err
 	} else {
-		m.verifyExportedFunctions(g.guest)
+		err := m.verifyExportedFunctions(g.guest)
+		if err != nil {
+			_ = wr.Close(ctx)
+			return nil, err
+		}
 		m.pool.Put(g)
 	}
 

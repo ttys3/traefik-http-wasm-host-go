@@ -100,15 +100,16 @@ func (w *middleware) NewHandler(_ context.Context, next http.Handler) http.Handl
 		next:           next,
 		features:       w.m.Features(),
 	}
-	runtime.SetFinalizer(handler, func(handler *guest) {
-		fmt.Printf("xxoo NewHandler closing guest\n")
-		w.Close(context.Background())
-	})
+	// runtime.SetFinalizer(handler, func(handler *guest) {
+	// 	fmt.Printf("xxoo NewHandler closing guest\n")
+	// 	w.Close(context.Background())
+	// })
 	return handler
 }
 
 // Close implements the same method as documented on handler.Middleware.
 func (w *middleware) Close(ctx context.Context) error {
+	fmt.Printf("xxoo middleware.Close() called\n")
 	return w.m.Close(ctx)
 }
 

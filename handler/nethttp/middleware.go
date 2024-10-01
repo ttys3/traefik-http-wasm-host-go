@@ -3,12 +3,11 @@ package wasm
 import (
 	"context"
 	"fmt"
+	handlerapi "github.com/http-wasm/http-wasm-host-go/api/handler"
+	"github.com/http-wasm/http-wasm-host-go/handler"
 	"io"
 	"net/http"
 	"runtime"
-
-	handlerapi "github.com/http-wasm/http-wasm-host-go/api/handler"
-	"github.com/http-wasm/http-wasm-host-go/handler"
 )
 
 // compile-time checks to ensure interfaces are implemented.
@@ -27,10 +26,10 @@ func NewMiddleware(ctx context.Context, guest []byte, options ...handler.Option)
 	}
 
 	mw := &middleware{m: m}
-	runtime.SetFinalizer(mw, func(mw *middleware) {
-		fmt.Printf("xxoo NewMiddleware closing middleware\n")
-		mw.Close(ctx)
-	})
+	//runtime.SetFinalizer(mw, func(mw *middleware) {
+	//	fmt.Printf("xxoo NewMiddleware closing middleware\n")
+	//	mw.Close(ctx)
+	//})
 	return mw, nil
 }
 
@@ -100,10 +99,10 @@ func (w *middleware) NewHandler(_ context.Context, next http.Handler) http.Handl
 		next:           next,
 		features:       w.m.Features(),
 	}
-	// runtime.SetFinalizer(handler, func(handler *guest) {
-	// 	fmt.Printf("xxoo NewHandler closing guest\n")
-	// 	w.Close(context.Background())
-	// })
+	runtime.SetFinalizer(handler, func(handler *guest) {
+		fmt.Printf("xxoo NewHandler closing middleware\n")
+		w.Close(context.Background())
+	})
 	return handler
 }
 

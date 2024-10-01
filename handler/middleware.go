@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -64,6 +66,7 @@ func (m *middleware) Features() handler.Features {
 }
 
 func NewMiddleware(ctx context.Context, guest []byte, host handler.Host, opts ...Option) (Middleware, error) {
+	log.Printf("=================== xxoo NewMiddleware")
 	o := &options{
 		newRuntime:   DefaultRuntime,
 		moduleConfig: wazero.NewModuleConfig().WithStartFunctions("_start", "_initialize"),
@@ -192,10 +195,24 @@ func (m *middleware) getOrCreateGuest(ctx context.Context) (*guest, error) {
 	poolG := m.pool.Get()
 	if poolG == nil {
 		if g, createErr := m.newGuest(ctx); createErr != nil {
+			log.Printf("=================== xxoo getOrCreateGuest pool Failed object")
 			return nil, createErr
 		} else {
+			log.Printf("=================== xxoo getOrCreateGuest pool New object")
+			runtime.SetFinalizer(g, func(g *guest) {
+				if err := g.guest.Close(context.Background()); err == nil {
+					log.Printf("=================== xxoo putPool guest close ok")
+				} else {
+					log.Printf("=================== xxoo putPool guest close err: %vr", err)
+				}
+				g.guest = nil
+				g.handleRequestFn = nil
+				g.handleResponseFn = nil
+			})
 			poolG = g
 		}
+	} else {
+		log.Printf("=================== xxoo getOrCreateGuest pool Get object")
 	}
 	return poolG.(*guest), nil
 }
@@ -211,6 +228,7 @@ func (m *middleware) HandleResponse(ctx context.Context, reqCtx uint32, hostErr 
 
 // Close implements api.Closer
 func (m *middleware) Close(ctx context.Context) error {
+	log.Printf("=================== xxoo middleware Close")
 	// We don't have to close any guests as the middleware will close it.
 	return m.runtime.Close(ctx)
 }

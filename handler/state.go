@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -51,8 +52,11 @@ func (r *requestState) closeRequest() (err error) {
 //   - releasing any response body resources
 func (r *requestState) Close() (err error) {
 	if g := r.g; g != nil {
+		fmt.Printf("=================== xxoo putPool pool put back: requestState.Close\n")
 		r.putPool(r.g)
 		r.g = nil
+	} else {
+		fmt.Printf("=================== xxoo fuck r.g is nil: requestState.Close\n")
 	}
 	err = r.closeRequest()
 	if respBW := r.responseBodyWriter; respBW != nil {

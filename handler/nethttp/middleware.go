@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"runtime"
 
@@ -29,7 +28,7 @@ func NewMiddleware(ctx context.Context, guest []byte, options ...handler.Option)
 
 	mw := &middleware{m: m}
 	runtime.SetFinalizer(mw, func(mw *middleware) {
-		log.Printf("xxoo NewMiddleware closing middleware")
+		fmt.Printf("xxoo NewMiddleware closing middleware\n")
 		mw.Close(ctx)
 	})
 	return mw, nil
@@ -102,7 +101,7 @@ func (w *middleware) NewHandler(_ context.Context, next http.Handler) http.Handl
 		features:       w.m.Features(),
 	}
 	runtime.SetFinalizer(handler, func(handler *guest) {
-		log.Printf("xxoo NewHandler closing guest")
+		fmt.Printf("xxoo NewHandler closing guest\n")
 		w.Close(context.Background())
 	})
 	return handler

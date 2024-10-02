@@ -64,7 +64,6 @@ func TestAlreadyExistingWasipModulue(t *testing.T) {
 		}
 		return r, nil
 	}))
-
 	if err != nil {
 		t.Fatal(err)
 	}
